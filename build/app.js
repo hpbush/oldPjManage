@@ -60,14 +60,10 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	//
-	// Notes: if i default the folder names to text box, they are never right clicked so they are never set to the active object.
-	// posible fix: remove right clicked object state and replace with a focused object state.  this will be useful
-	// in the future to regive focus after render and for the scroll to the focused object after render.
-	//
 	///////////////////////////////////////////////////////////////////////////////
 	//Define global functions
 	///////////////////////////////////////////////////////////////////////////////
+
 	function generateUUID() {
 	  var d = new Date().getTime();
 	  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -122,18 +118,12 @@
 
 	    _this.state = {
 	      selectionMap: [],
-	      openFolderContextMenu: false,
-	      contextMenu: {
-	        xCoord: null,
-	        yCoord: null
-	      },
-	      divContextMenu: {
-	        open: false,
-	        xCoord: null,
-	        yCoord: null
-	      },
-	      rClickedObj: {},
-	      focusdObject: {}
+	      customContextMenu: {
+	        open: true,
+	        type: null,
+	        xCoord: 0,
+	        yCoord: 0
+	      }
 	    };
 	    return _this;
 	  }
@@ -229,7 +219,7 @@
 	                selectedRoot.contents[i].contents.push({
 	                  name: 'New Folder',
 	                  selectStatus: '',
-	                  textBox: true,
+	                  textBox: false,
 	                  key: generateUUID(),
 	                  contents: []
 	                });
@@ -262,7 +252,7 @@
 	              _this3.props.folderRoots[selectedPropIndex].contents.push({
 	                name: 'New Folder',
 	                selectStatus: '',
-	                textBox: true,
+	                textBox: false,
 	                key: generateUUID(),
 	                contents: []
 	              });
@@ -277,138 +267,6 @@
 	            console.log('weird error');
 	          }
 	        })();
-	      }
-	    }
-	  }, {
-	    key: 'changeName',
-	    value: function changeName(event) {
-	      var newName = event.target.value;
-	      this.state.rClickedObj.name = newName;
-	      this.state.rClickedObj.textBox = false;
-	      this.setState({
-	        openFolderContextMenu: false,
-	        contextMenu: {
-	          xCoord: null,
-	          yCoord: null
-	        },
-	        rClickedObj: {}
-	      });
-	    }
-	  }, {
-	    key: 'folderContextMenuOpen',
-	    value: function folderContextMenuOpen(event) {
-	      event.preventDefault();
-	      //console.log(event.pageX + " " + event.pageY);
-	      var target = event.target;
-	      var reactId = '';
-	      if (target.nodeName === 'SPAN') {
-	        reactId = target.parentNode.dataset.reactid;
-	      } else if (target.nodeName === 'LI') {
-	        reactId = target.dataset.reactid;
-	      }
-
-	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
-	      var found = false;
-	      var r = {};
-	      function findSelection(currentLevel) {
-	        for (var i = 0; i < currentLevel.contents.length; i++) {
-	          if (currentLevel.contents[i].key === objKey) {
-	            found = true;
-	            r = currentLevel.contents[i];
-	          } else {
-	            if (currentLevel.contents[i].contents.length > 0) {
-	              findSelection(currentLevel.contents[i]);
-	              if (found) {
-	                break;
-	              }
-	            }
-	          }
-	        }
-	        return r;
-	      };
-
-	      r = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
-	      this.setState({
-	        openFolderContextMenu: true,
-	        contextMenu: {
-	          xCoord: event.pageX,
-	          yCoord: event.pageY
-	        },
-	        rClickedObj: r
-	      });
-	    }
-	  }, {
-	    key: 'divContextMenuOpen',
-	    value: function divContextMenuOpen(event) {
-	      event.preventDefault();
-
-	      this.setState({
-	        divContextMenu: {
-	          open: true,
-	          xCoord: event.pageX,
-	          yCoord: event.pageY
-	        }
-	      });
-	    }
-	  }, {
-	    key: 'onTextFeildFocus',
-	    value: function onTextFeildFocus(event) {
-	      var target = event.target;
-	      var reactId = target.parentNode.dataset.reactid;
-	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
-	      var found = false;
-	      var r = {};
-	      function findSelection(currentLevel) {
-	        for (var i = 0; i < currentLevel.contents.length; i++) {
-	          if (currentLevel.contents[i].key === objKey) {
-	            found = true;
-	            r = currentLevel.contents[i];
-	          } else {
-	            if (currentLevel.contents[i].contents.length > 0) {
-	              findSelection(currentLevel.contents[i]);
-	              if (found) {
-	                break;
-	              }
-	            }
-	          }
-	        }
-	        return r;
-	      };
-	      r = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
-	      this.state.rClickedObj = r;
-	    }
-	  }, {
-	    key: 'contextMenuOptions',
-	    value: function contextMenuOptions(event) {
-	      var target = event.target;
-	      if (target.parentNode.getAttribute('id') === 'rename' || target.getAttribute('id') === 'rename') {
-	        if (this.state.rClickedObj.textBox === false) {
-	          this.state.rClickedObj.textBox = true;
-	        }
-	      } else if (target.parentNode.getAttribute('id') === 'open' || target.getAttribute('id') === 'open') {
-	        console.log('open');
-	      }
-	    }
-	  }, {
-	    key: 'closeContextMenu',
-	    value: function closeContextMenu(event) {
-	      if (this.state.openFolderContextMenu === true) {
-	        this.setState({
-	          openFolderContextMenu: false,
-	          contextMenu: {
-	            xCoord: null,
-	            yCoord: null
-	          }
-	        });
-	      }
-	      if (this.state.divContextMenu.open === true) {
-	        this.setState({
-	          divContextMenu: {
-	            open: false,
-	            xCoord: null,
-	            yCoord: null
-	          }
-	        });
 	      }
 	    }
 	  }, {
@@ -431,29 +289,17 @@
 	    }
 	  }, {
 	    key: 'componentDidMount',
-	    value: function componentDidMount() {
-	      window.addEventListener('click', this.closeContextMenu.bind(this), false);
-	    }
-	  }, {
-	    key: 'myStringify',
-	    value: function myStringify() {
-	      /*let stringObj = JSON.stringify(this.props.folderRoots);
-	      console.log(stringObj);*/
-	      console.log(Array.prototype);
-	    }
+	    value: function componentDidMount() {}
 	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var _this4 = this;
 
-	      var styleFolderContextMenu = {
-	        top: this.state.contextMenu.yCoord + 10,
-	        left: this.state.contextMenu.xCoord + 10
+	      var styleContextMenu = {
+	        top: this.state.customContextMenu.yCoord + 10,
+	        left: this.state.customContextMenu.xCoord + 10
 	      };
-	      var styleDivContextMenu = {
-	        top: this.state.divContextMenu.yCoord + 10,
-	        left: this.state.divContextMenu.xCoord + 10
-	      };
+
 	      return _react2.default.createElement(
 	        'div',
 	        null,
@@ -466,7 +312,7 @@
 	            { id: 'addFolderBtn', onClick: this.newFolder.bind(this) },
 	            'New Folder'
 	          ),
-	          _react2.default.createElement('button', { onClick: this.myStringify.bind(this) })
+	          _react2.default.createElement('button', { onClick: console.log("Hi") })
 	        ),
 	        _react2.default.createElement(
 	          'div',
@@ -493,7 +339,7 @@
 	          this.state.selectionMap.map(function (level, i) {
 	            return _react2.default.createElement(
 	              'div',
-	              { key: generateUUID(), className: 'folderLevel', onContextMenu: _this4.divContextMenuOpen.bind(_this4) },
+	              { key: generateUUID(), className: 'folderLevel' },
 	              _react2.default.createElement(
 	                'ul',
 	                { onClick: _this4.selectFolder.bind(_this4) },
@@ -502,12 +348,12 @@
 	                    return _react2.default.createElement(
 	                      'li',
 	                      { className: item.selectStatus + ' folderLi', key: item.key },
-	                      _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name, onFocus: _this4.onTextFeildFocus.bind(_this4), onBlur: _this4.changeName.bind(_this4) })
+	                      _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name })
 	                    );
 	                  } else {
 	                    return _react2.default.createElement(
 	                      'li',
-	                      { onContextMenu: _this4.folderContextMenuOpen.bind(_this4), className: item.selectStatus + ' folderLi', key: item.key },
+	                      { className: item.selectStatus + ' folderLi', key: item.key },
 	                      _react2.default.createElement(
 	                        'span',
 	                        { className: 'folderSpan' },
@@ -519,37 +365,11 @@
 	              )
 	            );
 	          }),
-	          _react2.default.createElement('div', { key: generateUUID(), className: 'folderLevel', onContextMenu: this.divContextMenuOpen.bind(this) })
+	          _react2.default.createElement('div', { key: generateUUID(), className: 'folderLevel' })
 	        ),
-	        this.state.openFolderContextMenu ? _react2.default.createElement(
+	        this.state.customContextMenu.open ? _react2.default.createElement(
 	          'div',
-	          { id: 'customMenu', className: 'menu', style: styleFolderContextMenu, onClick: this.contextMenuOptions.bind(this) },
-	          _react2.default.createElement(
-	            'ul',
-	            null,
-	            _react2.default.createElement(
-	              'li',
-	              { id: 'rename' },
-	              _react2.default.createElement(
-	                'span',
-	                null,
-	                'Rename'
-	              )
-	            ),
-	            _react2.default.createElement(
-	              'li',
-	              { id: 'open' },
-	              _react2.default.createElement(
-	                'span',
-	                null,
-	                'Open'
-	              )
-	            )
-	          )
-	        ) : null,
-	        this.state.divContextMenu.open ? _react2.default.createElement(
-	          'div',
-	          { id: 'divCustomMenu', className: 'menu', style: styleDivContextMenu, onClick: this.contextMenuOptions.bind(this) },
+	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu, onClick: console.log("hi") },
 	          _react2.default.createElement(
 	            'ul',
 	            null,
@@ -572,11 +392,6 @@
 	}(_react2.default.Component);
 
 	_react2.default.render(_react2.default.createElement(App, { folderRoots: folderRoots }), document.getElementById('app'));
-
-	///////////////////////////////////////////////////////////////////////////////
-	//Event Listeners
-	///////////////////////////////////////////////////////////////////////////////
-	console.log("hello world");
 
 /***/ },
 /* 1 */
