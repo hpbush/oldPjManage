@@ -119,14 +119,19 @@
 	    _this.state = {
 	      selectionMap: [],
 	      customContextMenu: {
-	        open: true,
+	        open: false,
 	        type: null,
-	        xCoord: 0,
-	        yCoord: 0
+	        xCoord: null,
+	        yCoord: null
 	      }
 	    };
 	    return _this;
 	  }
+
+	  //////
+	  //Folder Selection and Creation
+	  //////
+
 
 	  _createClass(App, [{
 	    key: 'selectFolderRoot',
@@ -269,6 +274,50 @@
 	        })();
 	      }
 	    }
+
+	    //////
+	    //Context Menu Controlls
+	    //////
+
+	  }, {
+	    key: 'openContextMenu',
+	    value: function openContextMenu(event) {
+	      event.preventDefault();
+	      var type = 'Item';
+	      if (event.target.className === 'folderLevel') {
+	        type = 'Div';
+	      }
+	      this.setState({
+	        customContextMenu: {
+	          open: true,
+	          type: type,
+	          xCoord: event.pageX,
+	          yCoord: event.pageY
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'closeContextMenu',
+	    value: function closeContextMenu(event) {
+	      if (this.state.customContextMenu.open) {
+	        console.log(event.target);
+	        if (event.target.className != 'menu' && event.target.parentNode.className != 'menu') {
+	          this.setState({
+	            customContextMenu: {
+	              open: false,
+	              type: null,
+	              xCoord: null,
+	              yCoord: null
+	            }
+	          });
+	        }
+	      }
+	    }
+
+	    //////
+	    //Component Life Cycle
+	    //////
+
 	  }, {
 	    key: 'componentWillUpdate',
 	    value: function componentWillUpdate() {
@@ -289,7 +338,9 @@
 	    }
 	  }, {
 	    key: 'componentDidMount',
-	    value: function componentDidMount() {}
+	    value: function componentDidMount() {
+	      window.addEventListener('click', this.closeContextMenu.bind(this), false);
+	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
@@ -339,7 +390,7 @@
 	          this.state.selectionMap.map(function (level, i) {
 	            return _react2.default.createElement(
 	              'div',
-	              { key: generateUUID(), className: 'folderLevel' },
+	              { key: generateUUID(), className: 'folderLevel', onContextMenu: _this4.openContextMenu.bind(_this4) },
 	              _react2.default.createElement(
 	                'ul',
 	                { onClick: _this4.selectFolder.bind(_this4) },
@@ -365,9 +416,9 @@
 	              )
 	            );
 	          }),
-	          _react2.default.createElement('div', { key: generateUUID(), className: 'folderLevel' })
+	          _react2.default.createElement('div', { key: generateUUID(), className: 'folderLevel', onContextMenu: this.openContextMenu.bind(this) })
 	        ),
-	        this.state.customContextMenu.open ? _react2.default.createElement(
+	        this.state.customContextMenu.open ? this.state.customContextMenu.type === 'Div' ? _react2.default.createElement(
 	          'div',
 	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu, onClick: console.log("hi") },
 	          _react2.default.createElement(
@@ -380,6 +431,31 @@
 	                'span',
 	                null,
 	                'New Folder'
+	              )
+	            )
+	          )
+	        ) : _react2.default.createElement(
+	          'div',
+	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu, onClick: console.log("hi") },
+	          _react2.default.createElement(
+	            'ul',
+	            null,
+	            _react2.default.createElement(
+	              'li',
+	              { id: 'Rename' },
+	              _react2.default.createElement(
+	                'span',
+	                null,
+	                'Rename'
+	              )
+	            ),
+	            _react2.default.createElement(
+	              'li',
+	              { id: 'Open' },
+	              _react2.default.createElement(
+	                'span',
+	                null,
+	                'Open'
 	              )
 	            )
 	          )

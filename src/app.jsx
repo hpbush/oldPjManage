@@ -53,14 +53,17 @@ class App extends React.Component{
     this.state = {
       selectionMap: [],
       customContextMenu: {
-        open: true,
+        open: false,
         type: null,
-        xCoord: 0,
-        yCoord: 0
+        xCoord: null,
+        yCoord: null
       }
     }
   }
 
+  //////
+  //Folder Selection and Creation
+  //////
   selectFolderRoot(event){
     if(event.target.getAttribute('class') === 'liSpan'){
       let reactId = event.target.parentNode.dataset.reactid;
@@ -187,6 +190,44 @@ class App extends React.Component{
     }
   }
 
+  //////
+  //Context Menu Controlls
+  //////
+  openContextMenu(event){
+    event.preventDefault();
+    let type = 'Item';
+    if(event.target.className === 'folderLevel'){
+      type = 'Div';
+    }
+    this.setState({
+      customContextMenu:{
+        open: true,
+        type: type,
+        xCoord: event.pageX,
+        yCoord: event.pageY
+      }
+    });
+  }
+
+  closeContextMenu(event){
+    if(this.state.customContextMenu.open){
+      console.log(event.target);
+      if(event.target.className != 'menu' && event.target.parentNode.className != 'menu'){
+        this.setState({
+          customContextMenu:{
+            open: false,
+            type: null,
+            xCoord: null,
+            yCoord: null
+          }
+        });
+      }
+    }
+  }
+
+  //////
+  //Component Life Cycle
+  //////
   componentWillUpdate(){
     let folderTeirList = document.querySelectorAll('.folderLevel');
     scrollPositions = [];
@@ -204,7 +245,7 @@ class App extends React.Component{
   }
 
   componentDidMount(){
-
+    window.addEventListener('click', this.closeContextMenu.bind(this), false);
   }
 
   render(){
@@ -236,7 +277,7 @@ class App extends React.Component{
 
           {
             this.state.selectionMap.map((level, i) => {
-              return <div key = {generateUUID()} className = 'folderLevel'>
+              return <div key = {generateUUID()} className = 'folderLevel' onContextMenu = {this.openContextMenu.bind(this)}>
                 <ul onClick = {this.selectFolder.bind(this)}>
                   {
                     this.state.selectionMap[i].contents.map((item) => {
@@ -251,16 +292,23 @@ class App extends React.Component{
               </div>
             })
           }
-          <div key = {generateUUID()} className = 'folderLevel'></div>
+          <div key = {generateUUID()} className = 'folderLevel' onContextMenu = {this.openContextMenu.bind(this)}></div>
         </div>
 
         {
           this.state.customContextMenu.open
-            ? <div id="customContextMenu" className="menu" style = {styleContextMenu} onClick = {console.log("hi")}>
-                <ul>
-                  <li id="newFolder"><span>New Folder</span></li>
-                </ul>
-              </div>
+            ? this.state.customContextMenu.type === 'Div'
+              ? <div id="customContextMenu" className="menu" style = {styleContextMenu} onClick = {console.log("hi")}>
+                  <ul>
+                    <li id="newFolder"><span>New Folder</span></li>
+                  </ul>
+                </div>
+              : <div id="customContextMenu" className="menu" style = {styleContextMenu} onClick = {console.log("hi")}>
+                  <ul>
+                    <li id="Rename"><span>Rename</span></li>
+                    <li id="Open"><span>Open</span></li>
+                  </ul>
+                </div>
             : null
         }
 
