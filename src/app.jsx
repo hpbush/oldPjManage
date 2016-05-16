@@ -14,6 +14,54 @@ function generateUUID() {
     return uuid;
 }
 
+function findSelectionWrapper(startLevel, objKey, selFlag, addFlag){
+  let trail = [];
+  let found = false;
+
+  function findSel(currentLevel){
+    for(let i = 0; i < currentLevel.contents.length; i++){
+      trail.push(currentLevel.contents[i]);
+      if(currentLevel.contents[i].key === objKey){
+        found = true;
+
+        if(addFlag){
+          console.log("add");
+          currentLevel.contents[i].contents.push({
+            name: 'New Folder',
+            selectStatus: '',
+            textBox: true,
+            key: generateUUID(),
+            contents: []
+          });
+        }
+
+        if(selFlag){
+          currentLevel.contents[i].selectStatus = 'selected';
+          for(let j = 0; j < currentLevel.contents.length; j++){
+            if(j !== i){
+              currentLevel.contents[j].selectStatus = '';
+            }
+          }
+          for(let j = 0; j < currentLevel.contents[i].contents.length; j++){
+            currentLevel.contents[i].contents[j].selectStatus = '';
+          }
+        }
+
+        break;
+      }else{
+        findSel(currentLevel.contents[i]);
+        if(found){
+          return trail;
+        }
+      }
+      trail.pop();
+    }
+    return trail;
+  }
+
+  return findSel(startLevel);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //Define global variables
 ///////////////////////////////////////////////////////////////////////////////
@@ -93,42 +141,9 @@ class App extends React.Component{
 
   selectFolder(event, cMenuSelected){
     if(typeof cMenuSelected === 'object'|| event.target.getAttribute('class') === 'folderSpan'){
-      console.log('select script');
       let reactId = cMenuSelected.key || event.target.parentNode.dataset.reactid;
       let objKey = cMenuSelected.key || reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-
-      let found = false;
-      let trail = [];
-      function findSelection(currentLevel){
-        for(let i = 0; i < currentLevel.contents.length; i++){
-          trail.push(currentLevel.contents[i]);
-          if(currentLevel.contents[i].key === objKey){
-            currentLevel.contents[i].selectStatus = 'selected';
-            found = true;
-            //loop through remaining siblings and clear the selected selectStatus
-            for(let j = 0; j < currentLevel.contents.length; j++){
-              if(j !== i){
-                currentLevel.contents[j].selectStatus = '';
-              }
-            }
-            //loop through children and clear selected selectStatus
-            for(let j = 0; j < currentLevel.contents[i].contents.length; j++){
-              currentLevel.contents[i].contents[j].selectStatus = '';
-            }
-            break;
-          }else{
-            if(currentLevel.contents[i].contents.length > 0){
-              findSelection(currentLevel.contents[i]);
-              if(found){
-                break;
-              }
-            }
-          }
-          trail.pop();
-        }
-        return trail;
-      };
-      let newSelection = findSelection(this.state.selectionMap[0]);
+      let newSelection = findSelectionWrapper(this.state.selectionMap[0], objKey, true, false);
       newSelection.splice(0,0,this.state.selectionMap[0]);
       this.setState({
         selectionMap: newSelection
@@ -143,57 +158,20 @@ class App extends React.Component{
       if(typeof level === 'number'){
         endKey = this.state.selectionMap[level - 1].key;
       }
-      function findSelection(selectedRoot){
-        for(let i = 0; i < selectedRoot.contents.length; i++){
-          if(selectedRoot.contents[i].key === endKey){
-            found = true;
-            selectedRoot.contents[i].contents.push({
-              name: 'New Folder',
-              selectStatus: '',
-              textBox: true,
-              key: generateUUID(),
-              contents: []
-            });
-            break;
-          }else{
-            if(selectedRoot.contents[i].contents.length > 0){
-              if(found){
-                break;
-              }
-              findSelection(selectedRoot.contents[i]);
-            }
-          }
-        }
-      };
 
-      let objKey = this.state.selectionMap[0].key;
-      let selectedPropIndex = NaN;
-      for(let i = 0; i < this.props.folderRoots.length; i++){
-        if(this.props.folderRoots[i].key === objKey){
-          selectedPropIndex = i;
-          console.log(selectedPropIndex);
-          break;
-        }
-      }
-      if(selectedPropIndex != NaN){
-        if(this.state.selectionMap.length === 1 || level - 1 === 0){
-          this.props.folderRoots[selectedPropIndex].contents.push({
-            name: 'New Folder',
-            selectStatus: '',
-            textBox: true,
-            key: generateUUID(),
-            contents: []
-          });
-        }else{
-          findSelection(this.props.folderRoots[selectedPropIndex]);
-        }
-        let oldMap = this.state.selectionMap;
-        this.setState({
-          selectionMap: oldMap
+      if(this.state.selectionMap.length === 1 || level - 1 === 0){
+        this.state.selectionMap[0].contents.push({
+          name: 'New Folder',
+          selectStatus: '',
+          textBox: true,
+          key: generateUUID(),
+          contents: []
         });
       }else{
-        console.log('weird error');
+        //findSelection(this.props.folderRoots[selectedPropIndex]);
+        findSelectionWrapper(this.state.selectionMap[0], endKey, false, true);
       }
+      this.forceUpdate();
     }
   }
 
@@ -217,24 +195,8 @@ class App extends React.Component{
         reactId = target.dataset.reactid;
       }
       let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-      let found = false;
-      function findSelection(currentLevel){
-        for(let i = 0; i < currentLevel.contents.length; i++){
-          if(currentLevel.contents[i].key === objKey){
-            found = true;
-            owner = currentLevel.contents[i];
-          }else{
-            if(currentLevel.contents[i].contents.length > 0){
-              findSelection(currentLevel.contents[i]);
-              if(found){
-                break;
-              }
-            }
-          }
-        }
-        return owner;
-      };
-      owner = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
+      let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+      owner = trail[trail.length-1];
     }
 
     this.setState({
@@ -273,30 +235,12 @@ class App extends React.Component{
     let target = event.target;
     let reactId = target.parentNode.dataset.reactid;
     let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-    let found = false;
-    let r = {};
-    function findSelection(currentLevel){
-      for(let i = 0; i < currentLevel.contents.length; i++){
-        if(currentLevel.contents[i].key === objKey){
-          found = true;
-          r = currentLevel.contents[i];
-        }else{
-          if(currentLevel.contents[i].contents.length > 0){
-            findSelection(currentLevel.contents[i]);
-            if(found){
-              break;
-            }
-          }
-        }
-      }
-      return r;
-    };
-    r = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
+    let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+    let r = trail[trail.length - 1];
     this.state.customContextMenu.owner = r;
   }
 
   cMenuNameChangeConfirm(event){
-    console.log(this.state.customContextMenu);
     let newName = event.target.value;
     this.state.customContextMenu.owner.name = newName;
     this.state.customContextMenu.owner.textBox = false;
