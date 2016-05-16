@@ -229,7 +229,7 @@
 	                selectedRoot.contents[i].contents.push({
 	                  name: 'New Folder',
 	                  selectStatus: '',
-	                  textBox: false,
+	                  textBox: true,
 	                  key: generateUUID(),
 	                  contents: []
 	                });
@@ -266,7 +266,7 @@
 	              _this3.props.folderRoots[selectedPropIndex].contents.push({
 	                name: 'New Folder',
 	                selectStatus: '',
-	                textBox: false,
+	                textBox: true,
 	                key: generateUUID(),
 	                contents: []
 	              });
@@ -362,9 +362,45 @@
 	      }
 	    }
 	  }, {
-	    key: 'cMenuNameChange',
-	    value: function cMenuNameChange() {
-	      //this.state.customContextMenu.owner.textBox = true;
+	    key: 'cMenuNameChangeInit',
+	    value: function cMenuNameChangeInit() {
+	      this.state.customContextMenu.owner.textBox = true;
+	    }
+	  }, {
+	    key: 'cMenuFieldFocus',
+	    value: function cMenuFieldFocus(event) {
+	      var target = event.target;
+	      var reactId = target.parentNode.dataset.reactid;
+	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
+	      var found = false;
+	      var r = {};
+	      function findSelection(currentLevel) {
+	        for (var i = 0; i < currentLevel.contents.length; i++) {
+	          if (currentLevel.contents[i].key === objKey) {
+	            found = true;
+	            r = currentLevel.contents[i];
+	          } else {
+	            if (currentLevel.contents[i].contents.length > 0) {
+	              findSelection(currentLevel.contents[i]);
+	              if (found) {
+	                break;
+	              }
+	            }
+	          }
+	        }
+	        return r;
+	      };
+	      r = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
+	      this.state.customContextMenu.owner = r;
+	    }
+	  }, {
+	    key: 'cMenuNameChangeConfirm',
+	    value: function cMenuNameChangeConfirm(event) {
+	      console.log(this.state.customContextMenu);
+	      var newName = event.target.value;
+	      this.state.customContextMenu.owner.name = newName;
+	      this.state.customContextMenu.owner.textBox = false;
+	      this.forceUpdate();
 	    }
 	  }, {
 	    key: 'cMenuAddFolder',
@@ -462,7 +498,7 @@
 	                    return _react2.default.createElement(
 	                      'li',
 	                      { className: item.selectStatus + ' folderLi', key: item.key },
-	                      _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name })
+	                      _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name, onFocus: _this5.cMenuFieldFocus.bind(_this5), onBlur: _this5.cMenuNameChangeConfirm.bind(_this5) })
 	                    );
 	                  } else {
 	                    return _react2.default.createElement(
@@ -504,7 +540,7 @@
 	            null,
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'Rename', onClick: this.cMenuNameChange.bind(this) },
+	              { id: 'Rename', onClick: this.cMenuNameChangeInit.bind(this) },
 	              _react2.default.createElement(
 	                'span',
 	                null,

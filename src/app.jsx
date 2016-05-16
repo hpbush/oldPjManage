@@ -150,7 +150,7 @@ class App extends React.Component{
             selectedRoot.contents[i].contents.push({
               name: 'New Folder',
               selectStatus: '',
-              textBox: false,
+              textBox: true,
               key: generateUUID(),
               contents: []
             });
@@ -180,7 +180,7 @@ class App extends React.Component{
           this.props.folderRoots[selectedPropIndex].contents.push({
             name: 'New Folder',
             selectStatus: '',
-            textBox: false,
+            textBox: true,
             key: generateUUID(),
             contents: []
           });
@@ -265,8 +265,42 @@ class App extends React.Component{
     }
   }
 
-  cMenuNameChange(){
-    //this.state.customContextMenu.owner.textBox = true;
+  cMenuNameChangeInit(){
+    this.state.customContextMenu.owner.textBox = true;
+  }
+
+  cMenuFieldFocus(event){
+    let target = event.target;
+    let reactId = target.parentNode.dataset.reactid;
+    let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
+    let found = false;
+    let r = {};
+    function findSelection(currentLevel){
+      for(let i = 0; i < currentLevel.contents.length; i++){
+        if(currentLevel.contents[i].key === objKey){
+          found = true;
+          r = currentLevel.contents[i];
+        }else{
+          if(currentLevel.contents[i].contents.length > 0){
+            findSelection(currentLevel.contents[i]);
+            if(found){
+              break;
+            }
+          }
+        }
+      }
+      return r;
+    };
+    r = findSelection(this.props.folderRoots[this.state.selectionMap[0].index]);
+    this.state.customContextMenu.owner = r;
+  }
+
+  cMenuNameChangeConfirm(event){
+    console.log(this.state.customContextMenu);
+    let newName = event.target.value;
+    this.state.customContextMenu.owner.name = newName;
+    this.state.customContextMenu.owner.textBox = false;
+    this.forceUpdate();
   }
 
   cMenuAddFolder(){
@@ -334,7 +368,7 @@ class App extends React.Component{
                   {
                     this.state.selectionMap[i].contents.map((item) => {
                       if(item.textBox === true){
-                        return <li className = {item.selectStatus + ' folderLi'} key = {item.key}><input className = 'folderNameInput' type = 'text' defaultValue = {item.name}></input></li>
+                        return <li className = {item.selectStatus + ' folderLi'} key = {item.key}><input className = 'folderNameInput' type = 'text' defaultValue = {item.name} onFocus = {this.cMenuFieldFocus.bind(this)} onBlur = {this.cMenuNameChangeConfirm.bind(this)}></input></li>
                       }else{
                         return <li className = {item.selectStatus + ' folderLi'} key = {item.key}><span className = 'folderSpan'>{item.name}</span></li>
                       }
@@ -356,7 +390,7 @@ class App extends React.Component{
                 </div>
               : <div id="customContextMenu" className="menu" style = {styleContextMenu}>
                   <ul>
-                    <li id="Rename" onClick = {this.cMenuNameChange.bind(this)}><span>Rename</span></li>
+                    <li id="Rename" onClick = {this.cMenuNameChangeInit.bind(this)}><span>Rename</span></li>
                     <li id="Open" onClick = {this.cMenuSelectFolder.bind(this)}><span>Open</span></li>
                   </ul>
                 </div>
