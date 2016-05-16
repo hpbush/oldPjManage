@@ -426,6 +426,25 @@ li {
   .folderLevel input {
     max-width: 79%; }
 
+#lastLevel {
+  overflow-y: scroll;
+  border-right: 1px solid black;
+  padding-right: 2em;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  min-width: 180px;
+  max-width: 180px;
+  -webkit-flex-direction: column;
+      -ms-flex-direction: column;
+          flex-direction: column; }
+  #lastLevel ul {
+    width: 90%; }
+  #lastLevel li {
+    margin-bottom: 20px; }
+  #lastLevel input {
+    max-width: 79%; }
+
 .folderSpan {
   cursor: pointer; }
 

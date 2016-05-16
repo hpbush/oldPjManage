@@ -46,6 +46,8 @@
 
 	'use strict';
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _react = __webpack_require__(1);
@@ -122,7 +124,9 @@
 	        open: false,
 	        type: null,
 	        xCoord: null,
-	        yCoord: null
+	        yCoord: null,
+	        owner: null,
+	        level: null
 	      }
 	    };
 	    return _this;
@@ -161,10 +165,10 @@
 	    }
 	  }, {
 	    key: 'selectFolder',
-	    value: function selectFolder(event) {
+	    value: function selectFolder(event, cMenuSelected) {
 	      var _this2 = this;
 
-	      if (event.target.getAttribute('class') === 'folderSpan') {
+	      if ((typeof cMenuSelected === 'undefined' ? 'undefined' : _typeof(cMenuSelected)) === 'object' || event.target.getAttribute('class') === 'folderSpan') {
 	        (function () {
 	          var findSelection = function findSelection(currentLevel) {
 	            for (var i = 0; i < currentLevel.contents.length; i++) {
@@ -196,8 +200,9 @@
 	            return trail;
 	          };
 
-	          var reactId = event.target.parentNode.dataset.reactid;
-	          var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
+	          console.log('select script');
+	          var reactId = cMenuSelected.key || event.target.parentNode.dataset.reactid;
+	          var objKey = cMenuSelected.key || reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
 
 	          var found = false;
 	          var trail = [];
@@ -212,7 +217,7 @@
 	    }
 	  }, {
 	    key: 'newFolder',
-	    value: function newFolder(event) {
+	    value: function newFolder(event, level) {
 	      var _this3 = this;
 
 	      if (this.state.selectionMap[0] != undefined) {
@@ -242,6 +247,9 @@
 
 	          var found = false;
 	          var endKey = _this3.state.selectionMap[_this3.state.selectionMap.length - 1].key;
+	          if (typeof level === 'number') {
+	            endKey = _this3.state.selectionMap[level - 1].key;
+	          }
 	          ;
 
 	          var objKey = _this3.state.selectionMap[0].key;
@@ -249,11 +257,12 @@
 	          for (var i = 0; i < _this3.props.folderRoots.length; i++) {
 	            if (_this3.props.folderRoots[i].key === objKey) {
 	              selectedPropIndex = i;
+	              console.log(selectedPropIndex);
 	              break;
 	            }
 	          }
 	          if (selectedPropIndex != NaN) {
-	            if (_this3.state.selectionMap.length === 1) {
+	            if (_this3.state.selectionMap.length === 1 || level - 1 === 0) {
 	              _this3.props.folderRoots[selectedPropIndex].contents.push({
 	                name: 'New Folder',
 	                selectStatus: '',
@@ -282,17 +291,56 @@
 	  }, {
 	    key: 'openContextMenu',
 	    value: function openContextMenu(event) {
+	      var _this4 = this;
+
 	      event.preventDefault();
 	      var type = 'Item';
+	      var owner = {};
+	      var level = 0;
 	      if (event.target.className === 'folderLevel') {
 	        type = 'Div';
+	        level = parseInt(event.target.dataset.reactid.substring(event.target.dataset.reactid.indexOf('$') + 1), 10);
+	      } else {
+	        (function () {
+	          var findSelection = function findSelection(currentLevel) {
+	            for (var i = 0; i < currentLevel.contents.length; i++) {
+	              if (currentLevel.contents[i].key === objKey) {
+	                found = true;
+	                owner = currentLevel.contents[i];
+	              } else {
+	                if (currentLevel.contents[i].contents.length > 0) {
+	                  findSelection(currentLevel.contents[i]);
+	                  if (found) {
+	                    break;
+	                  }
+	                }
+	              }
+	            }
+	            return owner;
+	          };
+
+	          var target = event.target;
+	          var reactId = '';
+	          if (target.nodeName === 'SPAN') {
+	            reactId = target.parentNode.dataset.reactid;
+	          } else if (target.nodeName === 'LI') {
+	            reactId = target.dataset.reactid;
+	          }
+	          var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
+	          var found = false;
+	          ;
+	          owner = findSelection(_this4.props.folderRoots[_this4.state.selectionMap[0].index]);
+	        })();
 	      }
+
 	      this.setState({
 	        customContextMenu: {
 	          open: true,
 	          type: type,
 	          xCoord: event.pageX,
-	          yCoord: event.pageY
+	          yCoord: event.pageY,
+	          owner: owner,
+	          level: level
 	        }
 	      });
 	    }
@@ -300,18 +348,33 @@
 	    key: 'closeContextMenu',
 	    value: function closeContextMenu(event) {
 	      if (this.state.customContextMenu.open) {
-	        console.log(event.target);
 	        if (event.target.className != 'menu' && event.target.parentNode.className != 'menu') {
 	          this.setState({
 	            customContextMenu: {
 	              open: false,
 	              type: null,
 	              xCoord: null,
-	              yCoord: null
+	              yCoord: null,
+	              owner: null
 	            }
 	          });
 	        }
 	      }
+	    }
+	  }, {
+	    key: 'cMenuNameChange',
+	    value: function cMenuNameChange() {
+	      //this.state.customContextMenu.owner.textBox = true;
+	    }
+	  }, {
+	    key: 'cMenuAddFolder',
+	    value: function cMenuAddFolder() {
+	      this.newFolder(null, this.state.customContextMenu.level);
+	    }
+	  }, {
+	    key: 'cMenuSelectFolder',
+	    value: function cMenuSelectFolder() {
+	      this.selectFolder(null, this.state.customContextMenu.owner);
 	    }
 
 	    //////
@@ -344,7 +407,7 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var _this4 = this;
+	      var _this5 = this;
 
 	      var styleContextMenu = {
 	        top: this.state.customContextMenu.yCoord + 10,
@@ -363,7 +426,7 @@
 	            { id: 'addFolderBtn', onClick: this.newFolder.bind(this) },
 	            'New Folder'
 	          ),
-	          _react2.default.createElement('button', { onClick: console.log("Hi") })
+	          _react2.default.createElement('button', null)
 	        ),
 	        _react2.default.createElement(
 	          'div',
@@ -390,11 +453,11 @@
 	          this.state.selectionMap.map(function (level, i) {
 	            return _react2.default.createElement(
 	              'div',
-	              { key: generateUUID(), className: 'folderLevel', onContextMenu: _this4.openContextMenu.bind(_this4) },
+	              { key: i + 1, className: 'folderLevel', onContextMenu: _this5.openContextMenu.bind(_this5) },
 	              _react2.default.createElement(
 	                'ul',
-	                { onClick: _this4.selectFolder.bind(_this4) },
-	                _this4.state.selectionMap[i].contents.map(function (item) {
+	                { onClick: _this5.selectFolder.bind(_this5) },
+	                _this5.state.selectionMap[i].contents.map(function (item) {
 	                  if (item.textBox === true) {
 	                    return _react2.default.createElement(
 	                      'li',
@@ -415,18 +478,17 @@
 	                })
 	              )
 	            );
-	          }),
-	          _react2.default.createElement('div', { key: generateUUID(), className: 'folderLevel', onContextMenu: this.openContextMenu.bind(this) })
+	          })
 	        ),
 	        this.state.customContextMenu.open ? this.state.customContextMenu.type === 'Div' ? _react2.default.createElement(
 	          'div',
-	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu, onClick: console.log("hi") },
+	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu },
 	          _react2.default.createElement(
 	            'ul',
 	            null,
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'newFolder' },
+	              { id: 'newFolder', onClick: this.cMenuAddFolder.bind(this) },
 	              _react2.default.createElement(
 	                'span',
 	                null,
@@ -436,13 +498,13 @@
 	          )
 	        ) : _react2.default.createElement(
 	          'div',
-	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu, onClick: console.log("hi") },
+	          { id: 'customContextMenu', className: 'menu', style: styleContextMenu },
 	          _react2.default.createElement(
 	            'ul',
 	            null,
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'Rename' },
+	              { id: 'Rename', onClick: this.cMenuNameChange.bind(this) },
 	              _react2.default.createElement(
 	                'span',
 	                null,
@@ -451,7 +513,7 @@
 	            ),
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'Open' },
+	              { id: 'Open', onClick: this.cMenuSelectFolder.bind(this) },
 	              _react2.default.createElement(
 	                'span',
 	                null,
