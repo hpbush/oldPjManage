@@ -25,7 +25,6 @@ function findSelectionWrapper(startLevel, objKey, selFlag, addFlag){
         found = true;
 
         if(addFlag){
-          console.log("add");
           currentLevel.contents[i].contents.push({
             name: 'New Folder',
             selectStatus: '',
@@ -132,7 +131,6 @@ class App extends React.Component{
           this.props.folderRoots[i].selectStatus = '';
         }
       }
-
       this.setState({
         selectionMap: [selectedObj]
       });
@@ -143,7 +141,7 @@ class App extends React.Component{
     if(typeof cMenuSelected === 'object'|| event.target.getAttribute('class') === 'folderSpan'){
       let reactId = cMenuSelected.key || event.target.parentNode.dataset.reactid;
       let objKey = cMenuSelected.key || reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-      let newSelection = findSelectionWrapper(this.state.selectionMap[0], objKey, true, false);
+      let newSelection = findSelectionWrapper(this.state.selectionMap[0], objKey, true, false, false);
       newSelection.splice(0,0,this.state.selectionMap[0]);
       this.setState({
         selectionMap: newSelection
@@ -158,7 +156,6 @@ class App extends React.Component{
       if(typeof level === 'number'){
         endKey = this.state.selectionMap[level - 1].key;
       }
-
       if(this.state.selectionMap.length === 1 || level - 1 === 0){
         this.state.selectionMap[0].contents.push({
           name: 'New Folder',
@@ -168,7 +165,6 @@ class App extends React.Component{
           contents: []
         });
       }else{
-        //findSelection(this.props.folderRoots[selectedPropIndex]);
         findSelectionWrapper(this.state.selectionMap[0], endKey, false, true);
       }
       this.forceUpdate();
@@ -195,7 +191,7 @@ class App extends React.Component{
         reactId = target.dataset.reactid;
       }
       let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-      let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+      let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
       owner = trail[trail.length-1];
     }
 
@@ -235,7 +231,7 @@ class App extends React.Component{
     let target = event.target;
     let reactId = target.parentNode.dataset.reactid;
     let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
-    let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+    let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
     let r = trail[trail.length - 1];
     this.state.customContextMenu.owner = r;
   }
@@ -248,11 +244,16 @@ class App extends React.Component{
   }
 
   cMenuAddFolder(){
-    this.newFolder(null, this.state.customContextMenu.level);
+    this.newFolder(null, this.state.customContextMenu.level, false);
   }
 
   cMenuSelectFolder(){
     this.selectFolder(null, this.state.customContextMenu.owner);
+  }
+
+  cMenuAddFile(){
+    console.log(this.state.customContextMenu.owner);
+    //this.newFolder(null, this.state.customContextMenu.level, true);
   }
 
   //////
@@ -330,6 +331,7 @@ class App extends React.Component{
               ? <div id="customContextMenu" className="menu" style = {styleContextMenu}>
                   <ul>
                     <li id="newFolder" onClick = {this.cMenuAddFolder.bind(this)}><span>New Folder</span></li>
+                    <li id = "newFile" onClick = {this.cMenuAddFile.bind(this)}><span>{"Add " + this.state.selectionMap[0].name}</span></li>
                   </ul>
                 </div>
               : <div id="customContextMenu" className="menu" style = {styleContextMenu}>
@@ -346,3 +348,4 @@ class App extends React.Component{
   }
 }
 React.render(<App folderRoots = {folderRoots}/>, document.getElementById('app'));
+console.log("test");

@@ -87,7 +87,6 @@
 	        found = true;
 
 	        if (addFlag) {
-	          console.log("add");
 	          currentLevel.contents[i].contents.push({
 	            name: 'New Folder',
 	            selectStatus: '',
@@ -205,7 +204,6 @@
 	            this.props.folderRoots[i].selectStatus = '';
 	          }
 	        }
-
 	        this.setState({
 	          selectionMap: [selectedObj]
 	        });
@@ -217,7 +215,7 @@
 	      if ((typeof cMenuSelected === 'undefined' ? 'undefined' : _typeof(cMenuSelected)) === 'object' || event.target.getAttribute('class') === 'folderSpan') {
 	        var reactId = cMenuSelected.key || event.target.parentNode.dataset.reactid;
 	        var objKey = cMenuSelected.key || reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
-	        var newSelection = findSelectionWrapper(this.state.selectionMap[0], objKey, true, false);
+	        var newSelection = findSelectionWrapper(this.state.selectionMap[0], objKey, true, false, false);
 	        newSelection.splice(0, 0, this.state.selectionMap[0]);
 	        this.setState({
 	          selectionMap: newSelection
@@ -233,7 +231,6 @@
 	        if (typeof level === 'number') {
 	          endKey = this.state.selectionMap[level - 1].key;
 	        }
-
 	        if (this.state.selectionMap.length === 1 || level - 1 === 0) {
 	          this.state.selectionMap[0].contents.push({
 	            name: 'New Folder',
@@ -243,7 +240,6 @@
 	            contents: []
 	          });
 	        } else {
-	          //findSelection(this.props.folderRoots[selectedPropIndex]);
 	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true);
 	        }
 	        this.forceUpdate();
@@ -273,7 +269,7 @@
 	          reactId = target.dataset.reactid;
 	        }
 	        var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
-	        var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+	        var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
 	        owner = trail[trail.length - 1];
 	      }
 
@@ -316,7 +312,7 @@
 	      var target = event.target;
 	      var reactId = target.parentNode.dataset.reactid;
 	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
-	      var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false);
+	      var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
 	      var r = trail[trail.length - 1];
 	      this.state.customContextMenu.owner = r;
 	    }
@@ -331,12 +327,18 @@
 	  }, {
 	    key: 'cMenuAddFolder',
 	    value: function cMenuAddFolder() {
-	      this.newFolder(null, this.state.customContextMenu.level);
+	      this.newFolder(null, this.state.customContextMenu.level, false);
 	    }
 	  }, {
 	    key: 'cMenuSelectFolder',
 	    value: function cMenuSelectFolder() {
 	      this.selectFolder(null, this.state.customContextMenu.owner);
+	    }
+	  }, {
+	    key: 'cMenuAddFile',
+	    value: function cMenuAddFile() {
+	      console.log(this.state.customContextMenu.owner);
+	      //this.newFolder(null, this.state.customContextMenu.level, true);
 	    }
 
 	    //////
@@ -456,6 +458,15 @@
 	                null,
 	                'New Folder'
 	              )
+	            ),
+	            _react2.default.createElement(
+	              'li',
+	              { id: 'newFile', onClick: this.cMenuAddFile.bind(this) },
+	              _react2.default.createElement(
+	                'span',
+	                null,
+	                "Add " + this.state.selectionMap[0].name
+	              )
 	            )
 	          )
 	        ) : _react2.default.createElement(
@@ -492,6 +503,7 @@
 	}(_react2.default.Component);
 
 	_react2.default.render(_react2.default.createElement(App, { folderRoots: folderRoots }), document.getElementById('app'));
+	console.log("test");
 
 /***/ },
 /* 1 */
