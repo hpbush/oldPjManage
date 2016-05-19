@@ -342,16 +342,17 @@ li {
   font-size: 1rem; }
   li input {
     font-size: 1rem; }
-  li:before {
-    margin-right: 10px;
-    content: '';
-    display: inline-block;
-    background-image: url("../resources/images/closedFolder.svg");
-    background-position: center;
-    background-size: 20px 20px;
-    background-repeat: no-repeat;
-    height: 20px;
-    width: 20px; }
+
+.folderLi:before {
+  margin-right: 10px;
+  content: '';
+  display: inline-block;
+  background-image: url("../resources/images/closedFolder.svg");
+  background-position: center;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  height: 20px;
+  width: 20px; }
 
 .selected:before {
   content: '';
