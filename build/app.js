@@ -109,12 +109,12 @@
 	        if (selFlag) {
 	          currentLevel.contents[i].selectStatus = 'selected';
 	          for (var j = 0; j < currentLevel.contents.length; j++) {
-	            if (j !== i && addType === 'folder') {
+	            if (j !== i && currentLevel.contents[j].type === 'folder') {
 	              currentLevel.contents[j].selectStatus = '';
 	            }
 	          }
 	          for (var _j = 0; _j < currentLevel.contents[i].contents.length; _j++) {
-	            if (addType === 'folder') {
+	            if (currentLevel.contents[i].contents[_j].type === 'folder') {
 	              currentLevel.contents[i].contents[_j].selectStatus = '';
 	            }
 	          }
@@ -188,6 +188,10 @@
 	        yCoord: null,
 	        owner: null,
 	        level: null
+	      },
+	      dragAndDrop: {
+	        objDragging: null,
+	        objHovering: null
 	      }
 	    };
 	    return _this;
@@ -245,7 +249,6 @@
 	          endKey = this.state.selectionMap[level - 1].key;
 	        }
 	        if (this.state.selectionMap.length === 1 || level - 1 === 0) {
-	          console.log(type);
 	          //Only selection is root, place folder or file in that root folder
 	          if (type === 'folder') {
 	            this.state.selectionMap[0].contents.push({
@@ -265,7 +268,6 @@
 	            });
 	          }
 	        } else {
-	          console.log(type);
 	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type);
 	        }
 	        this.forceUpdate();
@@ -357,6 +359,69 @@
 	    }
 
 	    //////
+	    //Drag and Drop
+	    //////
+
+	  }, {
+	    key: 'dragStartLi',
+	    value: function dragStartLi(event) {
+	      var target = event.target;
+	      var reactId = null;
+	      if (target.nodeName === 'SPAN') {
+	        reactId = target.parentNode.dataset.reactid;
+	      } else if (target.nodeName === 'LI') {
+	        reactId = target.dataset.reactid;
+	      }
+	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
+	      var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
+	      trail = trail[trail.length - 1];
+	      this.setState({
+	        dragAndDrop: {
+	          objDragging: trail,
+	          objHovering: null
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'dragEndLi',
+	    value: function dragEndLi() {
+	      this.setState({
+	        dragAndDrop: {
+	          objDragging: null,
+	          objHovering: null
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'dragOverLi',
+	    value: function dragOverLi(event) {
+	      event.preventDefault();
+	      var target = event.target;
+	      var reactId = reactId = target.parentNode.dataset.reactid;
+	      var objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$") + 1) + 1);
+	      if ((this.state.dragAndDrop.objHovering === null || this.state.dragAndDrop.objHovering.key != objKey) && this.state.dragAndDrop.objDragging.key !== objKey) {
+	        var trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
+	        trail = trail[trail.length - 1];
+	        this.selectFolder(null, trail);
+	        this.setState({
+	          dragAndDrop: {
+	            objDragging: this.state.dragAndDrop.objDragging,
+	            objHovering: trail
+	          }
+	        });
+	      }
+	    }
+	  }, {
+	    key: 'dropLi',
+	    value: function dropLi(event) {
+	      event.preventDefault();
+	      var newItem = this.state.dragAndDrop.objDragging;
+	      var level = parseInt(event.target.dataset.reactid.substring(event.target.dataset.reactid.indexOf('$') + 1), 10);
+
+	      this.newItem(null, 'folder', level);
+	    }
+
+	    //////
 	    //Component Life Cycle
 	    //////
 
@@ -443,7 +508,9 @@
 	          this.state.selectionMap.map(function (level, i) {
 	            return _react2.default.createElement(
 	              'div',
-	              { key: i + 1, className: 'folderLevel', onContextMenu: _this2.openContextMenu.bind(_this2) },
+	              { key: i + 1, className: 'folderLevel', onContextMenu: _this2.openContextMenu.bind(_this2), onDragOver: function onDragOver(event) {
+	                  event.preventDefault();
+	                }, onDrop: _this2.dropLi.bind(_this2) },
 	              _react2.default.createElement(
 	                'ul',
 	                { onClick: _this2.selectFolder.bind(_this2) },
@@ -456,12 +523,16 @@
 	                        _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name, onFocus: _this2.cMenuFieldFocus.bind(_this2), onBlur: _this2.cMenuNameChangeConfirm.bind(_this2) })
 	                      );
 	                    } else {
+	                      var draggable = true;
+	                      if (item.selectStatus === 'selected') {
+	                        draggable = false;
+	                      }
 	                      return _react2.default.createElement(
 	                        'li',
-	                        { className: item.selectStatus + ' ' + item.type + 'Li', key: item.key },
+	                        { draggable: draggable, onDragStart: _this2.dragStartLi.bind(_this2), onDragEnd: _this2.dragEndLi.bind(_this2), className: item.selectStatus + ' ' + item.type + 'Li', key: item.key },
 	                        _react2.default.createElement(
 	                          'span',
-	                          { className: 'folderSpan' },
+	                          { className: 'folderSpan', onDragOver: _this2.dragOverLi.bind(_this2) },
 	                          item.name
 	                        )
 	                      );
@@ -476,7 +547,7 @@
 	                    } else {
 	                      return _react2.default.createElement(
 	                        'li',
-	                        { className: item.type + 'Li', key: item.key },
+	                        { draggable: 'tr', className: item.type + 'Li', key: item.key },
 	                        _react2.default.createElement(
 	                          'span',
 	                          { className: 'folderSpan' },

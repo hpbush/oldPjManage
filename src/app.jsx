@@ -47,12 +47,12 @@ function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType){
         if(selFlag){
           currentLevel.contents[i].selectStatus = 'selected';
           for(let j = 0; j < currentLevel.contents.length; j++){
-            if(j !== i && addType === 'folder'){
+            if(j !== i && currentLevel.contents[j].type === 'folder'){
               currentLevel.contents[j].selectStatus = '';
             }
           }
           for(let j = 0; j < currentLevel.contents[i].contents.length; j++){
-            if(addType === 'folder'){
+            if(currentLevel.contents[i].contents[j].type === 'folder'){
               currentLevel.contents[i].contents[j].selectStatus = '';
             }
           }
@@ -120,6 +120,10 @@ class App extends React.Component{
         yCoord: null,
         owner: null,
         level: null
+      },
+      dragAndDrop: {
+        objDragging: null,
+        objHovering: null
       }
     }
   }
@@ -170,7 +174,6 @@ class App extends React.Component{
         endKey = this.state.selectionMap[level - 1].key;
       }
       if(this.state.selectionMap.length === 1 || level - 1 === 0){
-        console.log(type);
         //Only selection is root, place folder or file in that root folder
         if(type === 'folder'){
           this.state.selectionMap[0].contents.push({
@@ -190,7 +193,6 @@ class App extends React.Component{
           });
         }
       }else{
-        console.log(type);
         findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type);
       }
       this.forceUpdate();
@@ -274,6 +276,64 @@ class App extends React.Component{
   }
 
   //////
+  //Drag and Drop
+  //////
+  dragStartLi(event){
+    let target = event.target;
+    let reactId = null;
+    if(target.nodeName === 'SPAN'){
+      reactId = target.parentNode.dataset.reactid;
+    }else if(target.nodeName === 'LI'){
+      reactId = target.dataset.reactid;
+    }
+    let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
+    let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
+    trail = trail[trail.length - 1];
+    this.setState({
+      dragAndDrop: {
+        objDragging: trail,
+        objHovering: null
+      }
+    });
+  }
+
+  dragEndLi(){
+    this.setState({
+      dragAndDrop: {
+        objDragging: null,
+        objHovering: null
+      }
+    });
+  }
+
+  dragOverLi(event){
+    event.preventDefault();
+    let target = event.target;
+    let reactId = reactId = target.parentNode.dataset.reactid;
+    let objKey = reactId.substring(reactId.indexOf("$", reactId.indexOf("$")+1)+1);
+    if((this.state.dragAndDrop.objHovering === null || this.state.dragAndDrop.objHovering.key != objKey) && this.state.dragAndDrop.objDragging.key !== objKey){
+      let trail = findSelectionWrapper(this.state.selectionMap[0], objKey, false, false, false);
+      trail = trail[trail.length - 1];
+      this.selectFolder(null, trail);
+      this.setState({
+        dragAndDrop: {
+          objDragging: this.state.dragAndDrop.objDragging,
+          objHovering: trail
+        }
+      });
+    }
+  }
+
+  dropLi(event){
+    event.preventDefault();
+    let newItem = this.state.dragAndDrop.objDragging;
+    let level =  parseInt(event.target.dataset.reactid.substring(event.target.dataset.reactid.indexOf('$') + 1), 10);
+
+    this.newItem(null, 'folder', level);
+
+  }
+
+  //////
   //Component Life Cycle
   //////
   componentWillUpdate(){
@@ -331,7 +391,7 @@ class App extends React.Component{
 
           {
             this.state.selectionMap.map((level, i) => {
-              return <div key = {i + 1} className = 'folderLevel' onContextMenu = {this.openContextMenu.bind(this)}>
+              return <div key = {i + 1} className = 'folderLevel' onContextMenu = {this.openContextMenu.bind(this)} onDragOver = {function(event){event.preventDefault();}} onDrop = {this.dropLi.bind(this)}>
                 <ul onClick = {this.selectFolder.bind(this)}>
                   {
                     this.state.selectionMap[i].contents.map((item) => {
@@ -339,13 +399,19 @@ class App extends React.Component{
                         if(item.textBox === true){
                           return <li className = {item.selectStatus + ' ' + item.type + 'Li'} key = {item.key}><input className = 'folderNameInput' type = 'text' defaultValue = {item.name} onFocus = {this.cMenuFieldFocus.bind(this)} onBlur = {this.cMenuNameChangeConfirm.bind(this)}></input></li>
                         }else{
-                          return <li className = {item.selectStatus + ' ' + item.type + 'Li'} key = {item.key}><span className = 'folderSpan'>{item.name}</span></li>
+                            let draggable = true;
+                            if(item.selectStatus === 'selected'){
+                              draggable = false;
+                            }
+                            return( <li draggable = {draggable} onDragStart = {this.dragStartLi.bind(this)} onDragEnd = {this.dragEndLi.bind(this)} className = {item.selectStatus + ' ' + item.type + 'Li'} key = {item.key}>
+                                      <span className = 'folderSpan' onDragOver = {this.dragOverLi.bind(this)}>{item.name}</span>
+                                    </li>)
                         }
                       }else{
                         if(item.textBox === true){
                           return <li className = {item.type + 'Li'} key = {item.key}><input className = 'folderNameInput' type = 'text' defaultValue = {item.name} ></input></li>
                         }else{
-                          return <li className = {item.type + 'Li'} key = {item.key}><span className = 'folderSpan'>{item.name}</span></li>
+                          return <li draggable = 'tr' className = {item.type + 'Li'} key = {item.key}><span className = 'folderSpan'>{item.name}</span></li>
                         }
                       }
                     })
