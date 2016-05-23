@@ -76,7 +76,7 @@
 	  return uuid;
 	}
 
-	function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType) {
+	function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType, dropObj, delFlag) {
 	  var trail = [];
 	  var found = false;
 
@@ -88,10 +88,10 @@
 
 	        if (addFlag) {
 	          if (addType === 'folder') {
-	            currentLevel.contents[i].contents.push({
+	            currentLevel.contents[i].contents.push(dropObj || {
 	              name: 'New Folder',
 	              selectStatus: '',
-	              textBox: false,
+	              textBox: true,
 	              key: generateUUID(),
 	              contents: [],
 	              type: 'folder'
@@ -118,6 +118,10 @@
 	              currentLevel.contents[i].contents[_j].selectStatus = '';
 	            }
 	          }
+	        }
+
+	        if (delFlag) {
+	          currentLevel.contents.splice(i, 1);
 	        }
 
 	        break;
@@ -242,7 +246,7 @@
 	    }
 	  }, {
 	    key: 'newItem',
-	    value: function newItem(event, type, level) {
+	    value: function newItem(event, type, level, dropObj) {
 	      if (this.state.selectionMap[0] != undefined) {
 	        var endKey = this.state.selectionMap[this.state.selectionMap.length - 1].key;
 	        if (typeof level === 'number') {
@@ -251,10 +255,10 @@
 	        if (this.state.selectionMap.length === 1 || level - 1 === 0) {
 	          //Only selection is root, place folder or file in that root folder
 	          if (type === 'folder') {
-	            this.state.selectionMap[0].contents.push({
+	            this.state.selectionMap[0].contents.push(dropObj || {
 	              name: 'New Folder',
 	              selectStatus: '',
-	              textBox: false,
+	              textBox: true,
 	              key: generateUUID(),
 	              contents: [],
 	              type: 'folder'
@@ -268,7 +272,7 @@
 	            });
 	          }
 	        } else {
-	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type);
+	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type, dropObj);
 	        }
 	        this.forceUpdate();
 	      }
@@ -418,7 +422,9 @@
 	      var newItem = this.state.dragAndDrop.objDragging;
 	      var level = parseInt(event.target.dataset.reactid.substring(event.target.dataset.reactid.indexOf('$') + 1), 10);
 
-	      this.newItem(null, 'folder', level);
+	      findSelectionWrapper(this.state.selectionMap[0], newItem.key, false, false, null, null, true);
+
+	      this.newItem(null, 'folder', level, newItem);
 	    }
 
 	    //////
@@ -469,18 +475,9 @@
 	          _react2.default.createElement(
 	            'button',
 	            { id: 'addFolderBtn', onClick: function onClick() {
-	                that.newItem(undefined, 'folder');
+	                that.newItem(null, 'folder', null, null);
 	              } },
 	            'New Folder'
-	          ),
-	          _react2.default.createElement(
-	            'button',
-	            { id: 'addFileBtn', onClick: function onClick() {
-	                if (that.state.selectionMap.length > 0) {
-	                  that.newItem(undefined, that.state.selectionMap[0].name);
-	                }
-	              } },
-	            'New File'
 	          )
 	        ),
 	        _react2.default.createElement(
@@ -570,7 +567,7 @@
 	            _react2.default.createElement(
 	              'li',
 	              { id: 'newFolder', onClick: function onClick() {
-	                  that.newItem(null, 'folder', that.state.customContextMenu.level);
+	                  that.newItem(null, 'folder', that.state.customContextMenu.level, null);
 	                } },
 	              _react2.default.createElement(
 	                'span',
@@ -581,7 +578,7 @@
 	            _react2.default.createElement(
 	              'li',
 	              { id: 'newFile', onClick: function onClick() {
-	                  that.newItem(null, that.state.selectionMap[0].name, that.state.customContextMenu.level);
+	                  that.newItem(null, that.state.selectionMap[0].name, that.state.customContextMenu.level, null);
 	                } },
 	              _react2.default.createElement(
 	                'span',

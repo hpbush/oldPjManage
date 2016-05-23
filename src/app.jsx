@@ -14,7 +14,7 @@ function generateUUID() {
     return uuid;
 }
 
-function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType){
+function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType, dropObj, delFlag){
   let trail = [];
   let found = false;
 
@@ -26,10 +26,12 @@ function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType){
 
         if(addFlag){
           if(addType === 'folder'){
-            currentLevel.contents[i].contents.push({
+            currentLevel.contents[i].contents.push(
+              dropObj ||
+            {
               name: 'New Folder',
               selectStatus: '',
-              textBox: false,
+              textBox: true,
               key: generateUUID(),
               contents: [],
               type: 'folder'
@@ -56,6 +58,10 @@ function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType){
               currentLevel.contents[i].contents[j].selectStatus = '';
             }
           }
+        }
+
+        if(delFlag){
+          currentLevel.contents.splice(i,1);
         }
 
         break;
@@ -167,7 +173,7 @@ class App extends React.Component{
     }
   }
 
-  newItem(event, type, level){
+  newItem(event, type, level, dropObj){
     if(this.state.selectionMap[0] != undefined){
       let endKey = this.state.selectionMap[this.state.selectionMap.length - 1].key;
       if(typeof level === 'number'){
@@ -176,10 +182,12 @@ class App extends React.Component{
       if(this.state.selectionMap.length === 1 || level - 1 === 0){
         //Only selection is root, place folder or file in that root folder
         if(type === 'folder'){
-          this.state.selectionMap[0].contents.push({
+          this.state.selectionMap[0].contents.push(
+          dropObj ||
+          {
             name: 'New Folder',
             selectStatus: '',
-            textBox: false,
+            textBox: true,
             key: generateUUID(),
             contents: [],
             type: 'folder'
@@ -193,7 +201,7 @@ class App extends React.Component{
           });
         }
       }else{
-        findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type);
+        findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type, dropObj);
       }
       this.forceUpdate();
     }
@@ -329,7 +337,9 @@ class App extends React.Component{
     let newItem = this.state.dragAndDrop.objDragging;
     let level =  parseInt(event.target.dataset.reactid.substring(event.target.dataset.reactid.indexOf('$') + 1), 10);
 
-    this.newItem(null, 'folder', level);
+    findSelectionWrapper(this.state.selectionMap[0], newItem.key, false, false, null, null, true);
+
+    this.newItem(null, 'folder', level, newItem);
 
   }
 
@@ -368,13 +378,7 @@ class App extends React.Component{
 
         <div className = 'col-xs-12'>
           <input id = 'folderSearch' type = 'text'></input>
-          <button id = 'addFolderBtn' onClick = {function(){that.newItem(undefined, 'folder');}}>New Folder</button>
-          <button id = 'addFileBtn' onClick = {function(){
-              if(that.state.selectionMap.length > 0){
-                that.newItem(undefined, that.state.selectionMap[0].name)
-              }
-            }}>New File
-          </button>
+          <button id = 'addFolderBtn' onClick = {function(){that.newItem(null, 'folder', null, null);}}>New Folder</button>
         </div>
 
         <div id = 'folderHousing'>
@@ -427,8 +431,8 @@ class App extends React.Component{
             ? this.state.customContextMenu.type === 'Div'
               ? <div id="customContextMenu" className="menu" style = {styleContextMenu}>
                   <ul>
-                    <li id="newFolder" onClick = {function(){that.newItem(null, 'folder', that.state.customContextMenu.level)}}><span>New Folder</span></li>
-                    <li id = "newFile" onClick = {function(){that.newItem(null, that.state.selectionMap[0].name, that.state.customContextMenu.level)}}><span>{"Add " + this.state.selectionMap[0].name}</span></li>
+                    <li id="newFolder" onClick = {function(){that.newItem(null, 'folder', that.state.customContextMenu.level, null)}}><span>New Folder</span></li>
+                    <li id = "newFile" onClick = {function(){that.newItem(null, that.state.selectionMap[0].name, that.state.customContextMenu.level, null)}}><span>{"Add " + this.state.selectionMap[0].name}</span></li>
                   </ul>
                 </div>
               : <div id="customContextMenu" className="menu" style = {styleContextMenu}>
