@@ -76,7 +76,7 @@
 	  return uuid;
 	}
 
-	function findSelectionWrapper(startLevel, objKey, selFlag, addFlag) {
+	function findSelectionWrapper(startLevel, objKey, selFlag, addFlag, addType) {
 	  var trail = [];
 	  var found = false;
 
@@ -87,30 +87,44 @@
 	        found = true;
 
 	        if (addFlag) {
-	          currentLevel.contents[i].contents.push({
-	            name: 'New Folder',
-	            selectStatus: '',
-	            textBox: true,
-	            key: generateUUID(),
-	            contents: []
-	          });
+	          if (addType === 'folder') {
+	            currentLevel.contents[i].contents.push({
+	              name: 'New Folder',
+	              selectStatus: '',
+	              textBox: false,
+	              key: generateUUID(),
+	              contents: [],
+	              type: 'folder'
+	            });
+	          } else {
+	            currentLevel.contents[i].contents.push({
+	              name: 'New ' + addType,
+	              textBox: false,
+	              key: generateUUID(),
+	              type: addType
+	            });
+	          }
 	        }
 
 	        if (selFlag) {
 	          currentLevel.contents[i].selectStatus = 'selected';
 	          for (var j = 0; j < currentLevel.contents.length; j++) {
-	            if (j !== i) {
+	            if (j !== i && addType === 'folder') {
 	              currentLevel.contents[j].selectStatus = '';
 	            }
 	          }
 	          for (var _j = 0; _j < currentLevel.contents[i].contents.length; _j++) {
-	            currentLevel.contents[i].contents[_j].selectStatus = '';
+	            if (addType === 'folder') {
+	              currentLevel.contents[i].contents[_j].selectStatus = '';
+	            }
 	          }
 	        }
 
 	        break;
 	      } else {
-	        findSel(currentLevel.contents[i]);
+	        if (currentLevel.contents[i].type === 'folder') {
+	          findSel(currentLevel.contents[i]);
+	        }
 	        if (found) {
 	          return trail;
 	        }
@@ -180,7 +194,7 @@
 	  }
 
 	  //////
-	  //Folder Selection and Creation
+	  //Folder and FileSelection and Creation
 	  //////
 
 
@@ -223,24 +237,36 @@
 	      }
 	    }
 	  }, {
-	    key: 'newFolder',
-	    value: function newFolder(event, level) {
+	    key: 'newItem',
+	    value: function newItem(event, type, level) {
 	      if (this.state.selectionMap[0] != undefined) {
-	        var found = false;
 	        var endKey = this.state.selectionMap[this.state.selectionMap.length - 1].key;
 	        if (typeof level === 'number') {
 	          endKey = this.state.selectionMap[level - 1].key;
 	        }
 	        if (this.state.selectionMap.length === 1 || level - 1 === 0) {
-	          this.state.selectionMap[0].contents.push({
-	            name: 'New Folder',
-	            selectStatus: '',
-	            textBox: true,
-	            key: generateUUID(),
-	            contents: []
-	          });
+	          console.log(type);
+	          //Only selection is root, place folder or file in that root folder
+	          if (type === 'folder') {
+	            this.state.selectionMap[0].contents.push({
+	              name: 'New Folder',
+	              selectStatus: '',
+	              textBox: false,
+	              key: generateUUID(),
+	              contents: [],
+	              type: 'folder'
+	            });
+	          } else {
+	            this.state.selectionMap[0].contents.push({
+	              name: 'New ' + type,
+	              textBox: false,
+	              key: generateUUID(),
+	              type: type
+	            });
+	          }
 	        } else {
-	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true);
+	          console.log(type);
+	          findSelectionWrapper(this.state.selectionMap[0], endKey, false, true, type);
 	        }
 	        this.forceUpdate();
 	      }
@@ -302,11 +328,6 @@
 	      }
 	    }
 	  }, {
-	    key: 'cMenuNameChangeInit',
-	    value: function cMenuNameChangeInit() {
-	      this.state.customContextMenu.owner.textBox = true;
-	    }
-	  }, {
 	    key: 'cMenuFieldFocus',
 	    value: function cMenuFieldFocus(event) {
 	      var target = event.target;
@@ -325,11 +346,6 @@
 	      this.forceUpdate();
 	    }
 	  }, {
-	    key: 'cMenuAddFolder',
-	    value: function cMenuAddFolder() {
-	      this.newFolder(null, this.state.customContextMenu.level, false);
-	    }
-	  }, {
 	    key: 'cMenuSelectFolder',
 	    value: function cMenuSelectFolder() {
 	      this.selectFolder(null, this.state.customContextMenu.owner);
@@ -338,7 +354,6 @@
 	    key: 'cMenuAddFile',
 	    value: function cMenuAddFile() {
 	      console.log(this.state.customContextMenu.owner);
-	      //this.newFolder(null, this.state.customContextMenu.level, true);
 	    }
 
 	    //////
@@ -377,6 +392,7 @@
 	        top: this.state.customContextMenu.yCoord + 10,
 	        left: this.state.customContextMenu.xCoord + 10
 	      };
+	      var that = this;
 
 	      return _react2.default.createElement(
 	        'div',
@@ -387,10 +403,20 @@
 	          _react2.default.createElement('input', { id: 'folderSearch', type: 'text' }),
 	          _react2.default.createElement(
 	            'button',
-	            { id: 'addFolderBtn', onClick: this.newFolder.bind(this) },
+	            { id: 'addFolderBtn', onClick: function onClick() {
+	                that.newItem(undefined, 'folder');
+	              } },
 	            'New Folder'
 	          ),
-	          _react2.default.createElement('button', null)
+	          _react2.default.createElement(
+	            'button',
+	            { id: 'addFileBtn', onClick: function onClick() {
+	                if (that.state.selectionMap.length > 0) {
+	                  that.newItem(undefined, that.state.selectionMap[0].name);
+	                }
+	              } },
+	            'New File'
+	          )
 	        ),
 	        _react2.default.createElement(
 	          'div',
@@ -422,22 +448,42 @@
 	                'ul',
 	                { onClick: _this2.selectFolder.bind(_this2) },
 	                _this2.state.selectionMap[i].contents.map(function (item) {
-	                  if (item.textBox === true) {
-	                    return _react2.default.createElement(
-	                      'li',
-	                      { className: item.selectStatus + ' folderLi', key: item.key },
-	                      _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name, onFocus: _this2.cMenuFieldFocus.bind(_this2), onBlur: _this2.cMenuNameChangeConfirm.bind(_this2) })
-	                    );
+	                  if (item.type === 'folder') {
+	                    if (item.textBox === true) {
+	                      return _react2.default.createElement(
+	                        'li',
+	                        { className: item.selectStatus + ' ' + item.type + 'Li', key: item.key },
+	                        _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name, onFocus: _this2.cMenuFieldFocus.bind(_this2), onBlur: _this2.cMenuNameChangeConfirm.bind(_this2) })
+	                      );
+	                    } else {
+	                      return _react2.default.createElement(
+	                        'li',
+	                        { className: item.selectStatus + ' ' + item.type + 'Li', key: item.key },
+	                        _react2.default.createElement(
+	                          'span',
+	                          { className: 'folderSpan' },
+	                          item.name
+	                        )
+	                      );
+	                    }
 	                  } else {
-	                    return _react2.default.createElement(
-	                      'li',
-	                      { className: item.selectStatus + ' folderLi', key: item.key },
-	                      _react2.default.createElement(
-	                        'span',
-	                        { className: 'folderSpan' },
-	                        item.name
-	                      )
-	                    );
+	                    if (item.textBox === true) {
+	                      return _react2.default.createElement(
+	                        'li',
+	                        { className: item.type + 'Li', key: item.key },
+	                        _react2.default.createElement('input', { className: 'folderNameInput', type: 'text', defaultValue: item.name })
+	                      );
+	                    } else {
+	                      return _react2.default.createElement(
+	                        'li',
+	                        { className: item.type + 'Li', key: item.key },
+	                        _react2.default.createElement(
+	                          'span',
+	                          { className: 'folderSpan' },
+	                          item.name
+	                        )
+	                      );
+	                    }
 	                  }
 	                })
 	              )
@@ -452,7 +498,9 @@
 	            null,
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'newFolder', onClick: this.cMenuAddFolder.bind(this) },
+	              { id: 'newFolder', onClick: function onClick() {
+	                  that.newItem(null, 'folder', that.state.customContextMenu.level);
+	                } },
 	              _react2.default.createElement(
 	                'span',
 	                null,
@@ -461,7 +509,9 @@
 	            ),
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'newFile', onClick: this.cMenuAddFile.bind(this) },
+	              { id: 'newFile', onClick: function onClick() {
+	                  that.newItem(null, that.state.selectionMap[0].name, that.state.customContextMenu.level);
+	                } },
 	              _react2.default.createElement(
 	                'span',
 	                null,
@@ -477,7 +527,9 @@
 	            null,
 	            _react2.default.createElement(
 	              'li',
-	              { id: 'Rename', onClick: this.cMenuNameChangeInit.bind(this) },
+	              { id: 'Rename', onClick: function onClick() {
+	                  that.state.customContextMenu.owner.textBox = true;
+	                } },
 	              _react2.default.createElement(
 	                'span',
 	                null,
@@ -503,7 +555,6 @@
 	}(_react2.default.Component);
 
 	_react2.default.render(_react2.default.createElement(App, { folderRoots: folderRoots }), document.getElementById('app'));
-	console.log("test");
 
 /***/ },
 /* 1 */
